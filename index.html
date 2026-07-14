@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZvuQ — zvukový inženýr</title>
+<meta name="description" content="ZvuQ — nahrávání, mix a mastering zvuku.">
+<link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="assets/favicon-16.png" sizes="16x16">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b;
+    --bg-elev:#131315;
+    --fg:#f2f1ee;
+    --muted:#8b8b90;
+    --accent:#e2262b;
+    --accent-dim:#4a1315;
+    --line:#232326;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--body);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--accent);color:var(--bg);}
+
+  .noise{
+    position:fixed; inset:0; pointer-events:none; opacity:.035; z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* NAV */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px clamp(20px,5vw,56px);
+    background:rgba(10,10,11,.75);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand img{height:28px; width:auto; display:block;}
+  .brand span{font-family:var(--mono); font-size:13px; letter-spacing:.12em; color:var(--muted);}
+  nav ul{display:flex; gap:clamp(18px,3vw,36px); list-style:none;}
+  nav a{
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); position:relative; padding-bottom:4px; transition:color .2s;
+  }
+  nav a:hover{color:var(--fg);}
+  nav a::after{
+    content:""; position:absolute; left:0; bottom:0; height:1px; width:0;
+    background:var(--accent); transition:width .25s;
+  }
+  nav a:hover::after{width:100%;}
+  .nav-toggle{display:none;}
+
+  /* HERO */
+  .hero{
+    position:relative; min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:120px 20px 60px; overflow:hidden;
+  }
+  .meter{
+    position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center;
+    gap:clamp(4px,1.2vw,10px); z-index:0; opacity:.5;
+    mask-image:linear-gradient(to top, black, transparent 78%);
+    -webkit-mask-image:linear-gradient(to top, black, transparent 78%);
+  }
+  .meter span{
+    width:clamp(6px,1.6vw,16px); background:linear-gradient(to top,var(--accent-dim),var(--accent));
+    border-radius:2px 2px 0 0; animation:bounce 2.4s ease-in-out infinite;
+  }
+  @keyframes bounce{
+    0%,100%{transform:scaleY(var(--h1));}
+    50%{transform:scaleY(var(--h2));}
+  }
+  @media (prefers-reduced-motion:reduce){ .meter span{animation:none; transform:scaleY(.5);} }
+
+  .hero-inner{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px;}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.25em; text-transform:uppercase;
+    color:var(--accent); display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px var(--accent);}
+  .hero img.logo{width:min(420px,72vw); height:auto; filter:drop-shadow(0 0 40px rgba(226,38,43,.18));}
+  .tagline{
+    font-family:var(--display); font-weight:500; font-size:clamp(18px,2.4vw,26px);
+    color:var(--muted); max-width:44ch;
+  }
+  .hero-cta{
+    display:flex; gap:14px; margin-top:8px; flex-wrap:wrap; justify-content:center;
+  }
+  .btn{
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    padding:13px 26px; border:1px solid var(--line); transition:all .2s;
+  }
+  .btn.primary{background:var(--accent); color:#100708; border-color:var(--accent);}
+  .btn.primary:hover{background:#ff3b40;}
+  .btn.ghost:hover{border-color:var(--fg);}
+
+  .scroll-hint{
+    position:absolute; bottom:26px; left:50%; transform:translateX(-50%);
+    font-family:var(--mono); font-size:10px; letter-spacing:.2em; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:8px; z-index:2;
+  }
+  .scroll-hint .line{width:1px; height:34px; background:linear-gradient(var(--muted),transparent); animation:drop 1.8s ease-in-out infinite;}
+  @keyframes drop{0%{opacity:0;transform:translateY(-8px);}50%{opacity:1;}100%{opacity:0;transform:translateY(8px);}}
+
+  /* SECTIONS */
+  section{padding:120px clamp(20px,6vw,80px); position:relative;}
+  .section-head{
+    display:flex; align-items:baseline; gap:16px; margin-bottom:56px;
+    border-bottom:1px solid var(--line); padding-bottom:20px;
+  }
+  .section-head .tag{
+    font-family:var(--mono); font-size:12px; letter-spacing:.15em; color:var(--accent); white-space:nowrap;
+  }
+  .section-head h2{
+    font-family:var(--display); font-weight:600; font-size:clamp(26px,4vw,40px); letter-spacing:-.01em;
+  }
+  .section-inner{max-width:1080px; margin:0 auto;}
+
+  /* PROFILE */
+  #profile .section-inner{display:grid; grid-template-columns:1.1fr .9fr; gap:60px; align-items:start;}
+  #profile p{color:var(--muted); font-size:17px; max-width:56ch;}
+  #profile p + p{margin-top:16px;}
+  .spec-list{border-top:1px solid var(--line);}
+  .spec-list div{
+    display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; letter-spacing:.04em;
+  }
+  .spec-list span:first-child{color:var(--muted); text-transform:uppercase;}
+
+  @media (max-width:820px){
+    #profile .section-inner{grid-template-columns:1fr;}
+  }
+
+  /* SERVICES */
+  .services-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line);}
+  .service{background:var(--bg); padding:34px 28px; transition:background .2s;}
+  .service:hover{background:var(--bg-elev);}
+  .service .num{font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:.1em;}
+  .service h3{font-family:var(--display); font-size:19px; font-weight:600; margin:14px 0 10px;}
+  .service p{color:var(--muted); font-size:14px;}
+
+  /* GALLERY */
+  .gallery-placeholder{
+    border:1px dashed var(--line); padding:70px 20px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  .gallery-placeholder .icon{
+    width:44px; height:44px; border:1px solid var(--line); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:var(--accent);
+    font-family:var(--mono); font-size:16px;
+  }
+  .gallery-placeholder p{color:var(--muted); font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;}
+
+  /* CONTACT */
+  #contact{padding-bottom:60px;}
+  #contact .section-inner{display:grid; grid-template-columns:1fr 1fr; gap:60px;}
+  .contact-block a.big{
+    display:block; font-family:var(--display); font-weight:600;
+    font-size:clamp(22px,3.4vw,34px); padding:20px 0; border-bottom:1px solid var(--line);
+    transition:color .2s;
+  }
+  .contact-block a.big:hover{color:var(--accent);}
+  .contact-block .label{font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;}
+  .socials{display:flex; gap:12px; margin-top:28px;}
+  .social-btn{
+    display:flex; align-items:center; gap:10px; padding:12px 18px; border:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; letter-spacing:.05em; transition:all .2s;
+  }
+  .social-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .social-btn svg{width:16px; height:16px;}
+  .note{
+    font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:20px; line-height:1.7;
+  }
+
+  @media (max-width:820px){
+    #contact .section-inner{grid-template-columns:1fr;}
+  }
+
+  @media (max-width:640px){
+    header{flex-wrap:wrap; row-gap:12px; padding:16px 20px;}
+    nav ul{gap:16px; width:100%; justify-content:center;}
+    nav a{font-size:11px;}
+    .hero{padding-top:150px;}
+    section{padding:80px 20px;}
+    .section-head{flex-direction:column; align-items:flex-start; gap:8px;}
+  }
+
+  footer{
+    border-top:1px solid var(--line); padding:30px clamp(20px,6vw,80px);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  }
+  footer img{height:18px; opacity:.8;}
+  footer .copy{font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.05em;}
+
+  .reveal{opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1; transform:none;}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<header>
+  <div class="brand">
+    <img src="assets/zvuq_logo_white.png" alt="ZvuQ logo">
+    <span>ZVUQ / AUDIO ENGINEER</span>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#profile">O mně</a></li>
+      <li><a href="#services">Služby</a></li>
+      <li><a href="#gallery">Galerie</a></li>
+      <li><a href="#contact">Kontakt</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="meter" id="meter"></div>
+  <div class="hero-inner">
+    <div class="eyebrow">signal / input</div>
+    <img class="logo" src="assets/zvuq-logo-full.png" alt="ZvuQ">
+    <p class="tagline">Nahrávání, mix a mastering zvuku — čistý signál od prvního mikrofonu až po finální export.</p>
+    <div class="hero-cta">
+      <a href="#contact" class="btn primary">Napsat zprávu</a>
+      <a href="#services" class="btn ghost">Co dělám</a>
+    </div>
+  </div>
+  <div class="scroll-hint"><span>scroll</span><span class="line"></span></div>
+</section>
+
+<section id="profile">
+  <div class="section-inner">
+    <div>
+      <div class="section-head"><span class="tag">// profile</span><h2>O mně</h2></div>
+      <p class="reveal">
+        Jsem zvukař ZvuQ — starám se o to, aby nahrávka, mix nebo živý zvuk zněly přesně tak, jak mají.
+        Pracuju s hudebníky i tvůrci, kterým záleží na detailu, a ke každému projektu přistupuju
+        individuálně, od prvního nastavení mikrofonů až po finální doladění.
+      </p>
+      <p class="reveal">
+      </p>
+    </div>
+    <div class="spec-list reveal">
+      <div><span>Zaměření</span><span>Studio / Live</span></div>
+      <div><span>Formát</span><span>Nahrávání · Mix · Mastering</span></div>
+      <div><span>Dostupnost</span><span>Na dotaz</span></div>
+      <div><span>Lokace</span><span>Doplnit</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="section-inner">
+    <div class="section-head"><span class="tag">// processing</span><h2>Služby</h2></div>
+    <div class="services-grid">
+      <div class="service reveal">
+        <div class="num">01</div>
+        <h3>Nahrávání</h3>
+        <p>Studiové i terénní nahrávání nástrojů, vokálů a živých vystoupení.</p>
+      </div>
+      <div class="service reveal">
+        <div class="num">02</div>
+        <h3>Mix</h3>
+        <p>Vyvážení stop do čistého, srozumitelného a dynamického mixu.</p>
+      </div>
+      <div class="service reveal">
+        <div class="num">03</div>
+        <h3>Mastering</h3>
+        <p>Finální doladění hlasitosti a znění pro streaming i fyzická média.</p>
+      </div>
+      <div class="service reveal">
+        <div class="num">04</div>
+        <h3>Live zvuk</h3>
+        <p>Ozvučení koncertů a akcí — od zkoušky až po samotný večer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="section-inner">
+    <div class="section-head"><span class="tag">// archive</span><h2>Galerie</h2></div>
+    <div class="gallery-placeholder reveal">
+      <div class="icon">♪</div>
+      <p>Fotky ze studia a akcí budou brzy tady</p>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="section-inner">
+    <div>
+      <div class="section-head"><span class="tag">// output</span><h2>Kontakt</h2></div>
+      <div class="contact-block">
+        <div class="label">E-mail</div>
+        <a class="big" href="mailto:zvuq.hd@gmail.com">zvuq.hd@gmail.com</a>
+      </div>
+    </div>
+    <div>
+      <div class="label" style="font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px;">Sociální sítě</div>
+      <div class="socials">
+        <a class="social-btn" href="https://www.facebook.com/zvuqzvuq/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg>
+          Facebook
+        </a>
+        <a class="social-btn" href="https://www.instagram.com/zvuq_zvuq/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+          Instagram
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <img src="assets/Zvuq_logo_white.png" alt="ZvuQ">
+  <div class="copy">© <span id="year"></span> ZVUQ — VŠECHNA PRÁVA VYHRAZENA</div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Build meter bars
+  const meter = document.getElementById('meter');
+  const n = 40;
+  for(let i=0;i<n;i++){
+    const s = document.createElement('span');
+    const base = 0.15 + Math.random()*0.65;
+    const peak = Math.min(1, base + 0.15 + Math.random()*0.3);
+    s.style.setProperty('--h1', base.toFixed(2));
+    s.style.setProperty('--h2', peak.toFixed(2));
+    s.style.height = '52vh';
+    s.style.animationDelay = (Math.random()*2).toFixed(2)+'s';
+    s.style.animationDuration = (1.8+Math.random()*1.6).toFixed(2)+'s';
+    meter.appendChild(s);
+  }
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Nav shrink/hide not needed; keep simple.
+</script>
+
+</body>
+</html>
