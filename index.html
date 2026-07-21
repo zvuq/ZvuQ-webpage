@@ -45,6 +45,9 @@
     overflow-x:hidden;
     height: 100%;
   }
+  body.modal-open {
+    overflow: hidden;
+  }
   a{color:inherit;text-decoration:none;}
   ::selection{background:var(--accent);color:var(--bg);}
 
@@ -175,9 +178,11 @@
     font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase;
     padding:13px 26px; border:1px solid var(--line); transition:all .2s;
     border-radius:var(--radius-sm);
+    cursor: pointer;
   }
   .btn.primary{background:var(--accent); color:#100708; border-color:var(--accent);}
   .btn.primary:hover{background:#ff3b40;}
+  .btn.ghost{background:transparent; color:var(--fg);}
   .btn.ghost:hover{border-color:var(--fg); background:var(--bg-hover);}
 
   .scroll-hint{
@@ -222,13 +227,121 @@
   .service h3{font-family:var(--display); font-size:19px; font-weight:600; margin:14px 0 10px;}
   .service p{color:var(--muted); font-size:14px;}
 
-  /* GALLERY GRID & ITEMS */
-  .gallery-grid {
+  /* ALBUMS GRID */
+  .albums-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
     position: relative;
     z-index: 1;
+  }
+  .album-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+  }
+  .album-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+  .album-cover {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--bg-elev);
+  }
+  .album-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .4s ease, filter .4s ease;
+    filter: brightness(.85);
+  }
+  .album-card:hover .album-cover img {
+    transform: scale(1.06);
+    filter: brightness(1);
+  }
+  .album-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(10, 10, 11, 0.85);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .album-info {
+    padding: 18px 20px;
+  }
+  .album-info h3 {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--fg);
+  }
+  .album-info p {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ALBUM DETAIL MODAL */
+  .album-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(10, 10, 11, 0.95);
+    backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  .album-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .album-modal-header {
+    padding: 24px clamp(20px, 5vw, 56px);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 10, 11, 0.8);
+  }
+  .album-modal-title h2 {
+    font-family: var(--display);
+    font-size: clamp(20px, 3vw, 28px);
+    font-weight: 600;
+  }
+  .album-modal-title span {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: .1em;
+  }
+  .album-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px clamp(20px, 5vw, 56px);
+  }
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-width: 1320px;
+    margin: 0 auto;
   }
   .gallery-item {
     position: relative;
@@ -237,7 +350,6 @@
     overflow: hidden;
     border: 1px solid var(--line);
     background: var(--bg-panel);
-    backdrop-filter: blur(6px);
     cursor: pointer;
     transition: border-color .3s ease, transform .3s ease;
   }
@@ -263,7 +375,7 @@
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: rgba(10, 10, 11, 0.92);
+    background: rgba(10, 10, 11, 0.95);
     backdrop-filter: blur(14px);
     display: flex;
     align-items: center;
@@ -379,7 +491,7 @@
     nav a{font-size:11px;}
     section{padding:80px 20px;}
     .section-head{flex-direction:column; align-items:flex-start; gap:8px;}
-    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
     .lightbox-prev { left: 12px; }
     .lightbox-next { right: 12px; }
   }
@@ -468,28 +580,14 @@ Hudba je součástí mého života už řadu let. Ať stojím za mixem, za DJ pu
   </div>
 </section>
 
+<!-- GALERIE ALBUMŮ -->
 <section id="gallery">
   <div class="section-inner">
-    <div class="section-head"><span class="tag">// archive</span><h2>Galerie</h2></div>
+    <div class="section-head"><span class="tag">// archive</span><h2>Galerie Akcí</h2></div>
     
-    <div class="gallery-grid">
-      <div class="gallery-item reveal">
-        <img src="assets/gallery/1.png" alt="Fotka z akce 1" loading="lazy">
-      </div>
-      <div class="gallery-item reveal">
-        <img src="assets/gallery/2.png" alt="Fotka z akce 2" loading="lazy">
-      </div>
-      <div class="gallery-item reveal">
-        <img src="assets/gallery/3.png" alt="Fotka z akce 3" loading="lazy">
-      </div>
-      <div class="gallery-item reveal">
-        <img src="assets/gallery/4.png" alt="Fotka z akce 4" loading="lazy">
-      </div>
-      <div class="gallery-item reveal">
-        <img src="assets/gallery/5.png" alt="Fotka z akce 5" loading="lazy">
-      </div>
+    <div class="albums-grid" id="albums-grid">
+      <!-- Alba jsou generována dynamicky skrze JS -->
     </div>
-
   </div>
 </section>
 
@@ -525,6 +623,22 @@ Hudba je součástí mého života už řadu let. Ať stojím za mixem, za DJ pu
   </footer>
 </section>
 
+<!-- MODAL PRO DETAIL ALBA -->
+<div class="album-modal" id="album-modal">
+  <div class="album-modal-header">
+    <div class="album-modal-title">
+      <span id="modal-album-date">// EVENT</span>
+      <h2 id="modal-album-title">Název akce</h2>
+    </div>
+    <button class="btn ghost" id="album-modal-close">Zavřít [ESC]</button>
+  </div>
+  <div class="album-modal-body">
+    <div class="gallery-grid" id="modal-gallery-grid">
+      <!-- Fotky z vybraného alba -->
+    </div>
+  </div>
+</div>
+
 <!-- LIGHTBOX MODAL WITH FULL NAVIGATION -->
 <div class="lightbox" id="lightbox">
   <button class="lightbox-btn lightbox-close" id="lightbox-close" aria-label="Zavřít">&times;</button>
@@ -537,89 +651,112 @@ Hudba je součástí mého života už řadu let. Ať stojím za mixem, za DJ pu
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // Generate Centered Reflexive Soundwave
-  const meter = document.getElementById('meter');
-  const n = Math.max(48, Math.round(window.innerWidth / 20));
-  
-  for(let i = 0; i < n; i++) {
-    const s = document.createElement('span');
-    const normalizedPos = Math.abs((i / (n - 1)) - 0.5) * 2;
-    const stereoShape = 0.35 + Math.pow(normalizedPos, 1.4) * 0.65;
-    
-    const base = (0.25 + Math.random() * 0.35) * stereoShape;
-    const peak = Math.min(1, base + (0.3 + Math.random() * 0.4) * stereoShape);
-    
-    s.style.setProperty('--h1', base.toFixed(2));
-    s.style.setProperty('--h2', peak.toFixed(2));
-    s.style.height = '100%';
-    s.style.animationDelay = (Math.random() * 2).toFixed(2) + 's';
-    s.style.animationDuration = (1.4 + Math.random() * 1.4).toFixed(2) + 's';
-    meter.appendChild(s);
+  // Pomocná funkce pro generování fotek podle číselné řady (1.ext až X.ext)
+  function generatePhotos(folderPath, count, ext = 'png') {
+    const photos = [];
+    for (let i = 1; i <= count; i++) {
+      photos.push(`${folderPath}/${i}.${ext}`);
+    }
+    return photos;
   }
 
-  // Dynamic soundwave amplification on scroll
-  window.addEventListener('scroll', () => {
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const scrollPercent = window.scrollY / (maxScroll || 1);
-    const factor = 1 + scrollPercent * 0.6; 
-    document.documentElement.style.setProperty('--scroll-factor', factor);
-  });
+  // DATOVÁ STRUKTURA ALBUMŮ
+  const albums = [
+    {
+      id: 'fest-pod-zamkem-2026',
+      title: 'fest Pod zámkem 2026',
+      date: 'Horažďovice · 2026',
+      cover: 'assets/gallery/fest Pod zámkem 2026/1.png',
+      // Generuje cesty 1.png až 10.png
+      photos: generatePhotos('assets/gallery/fest Pod zámkem 2026', 10, 'png')
+    }
+  ];
 
-  // Reveal elements on section entry
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => { 
-      if(e.isIntersecting){ 
-        e.target.classList.add('in'); 
-      } 
-    });
-  }, { threshold: 0.2 });
-  
-  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  // DOM Prvky
+  const albumsGrid = document.getElementById('albums-grid');
+  const albumModal = document.getElementById('album-modal');
+  const albumModalClose = document.getElementById('album-modal-close');
+  const modalAlbumTitle = document.getElementById('modal-album-title');
+  const modalAlbumDate = document.getElementById('modal-album-date');
+  const modalGalleryGrid = document.getElementById('modal-gallery-grid');
 
-  // Track active section for soundwave tuning
-  const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        document.body.setAttribute('data-section', e.target.id);
-      }
-    });
-  }, { threshold: 0.55 });
-
-  document.querySelectorAll('section[id]').forEach(el => sectionObserver.observe(el));
-
-  // LIGHTBOX WITH GALLERY NAVIGATION & KEYBOARD CONTROLS
   const lightbox = document.getElementById('lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxClose = document.getElementById('lightbox-close');
   const lightboxPrev = document.getElementById('lightbox-prev');
   const lightboxNext = document.getElementById('lightbox-next');
   const lightboxCounter = document.getElementById('lightbox-counter');
-  
-  const galleryItems = Array.from(document.querySelectorAll('.gallery-item img'));
+
+  let activePhotos = [];
   let currentIndex = 0;
 
+  // Vygenerování karet albumů na hlavní stránce
+  albums.forEach(album => {
+    const card = document.createElement('div');
+    card.className = 'album-card reveal';
+    card.innerHTML = `
+      <div class="album-cover">
+        <img src="${album.cover}" alt="${album.title}" loading="lazy">
+        <div class="album-badge">${album.photos.length} fotek</div>
+      </div>
+      <div class="album-info">
+        <h3>${album.title}</h3>
+        <p>${album.date}</p>
+      </div>
+    `;
+    card.addEventListener('click', () => openAlbumModal(album));
+    albumsGrid.appendChild(card);
+  });
+
+  // Otevření okna s detailem vybraného alba
+  function openAlbumModal(album) {
+    modalAlbumTitle.textContent = album.title;
+    modalAlbumDate.textContent = `// ${album.date}`;
+    modalGalleryGrid.innerHTML = '';
+    activePhotos = album.photos;
+
+    album.photos.forEach((src, idx) => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.innerHTML = `<img src="${src}" alt="${album.title} - ${idx + 1}" loading="lazy">`;
+      item.addEventListener('click', () => {
+        openLightbox(idx);
+      });
+      modalGalleryGrid.appendChild(item);
+    });
+
+    albumModal.classList.add('active');
+    document.body.classList.add('modal-open');
+  }
+
+  function closeAlbumModal() {
+    albumModal.classList.remove('active');
+    document.body.classList.remove('modal-open');
+  }
+
+  albumModalClose.addEventListener('click', closeAlbumModal);
+
+  // LIGHTBOX LOGIKA
+  function openLightbox(index) {
+    updateLightbox(index);
+    lightbox.classList.add('active');
+  }
+
   const updateLightbox = (index) => {
-    currentIndex = (index + galleryItems.length) % galleryItems.length;
-    const currentImg = galleryItems[currentIndex];
+    if (!activePhotos.length) return;
+    currentIndex = (index + activePhotos.length) % activePhotos.length;
+    const currentSrc = activePhotos[currentIndex];
     
     lightboxImg.style.opacity = '0';
     lightboxImg.style.transform = 'scale(0.96)';
     
     setTimeout(() => {
-      lightboxImg.src = currentImg.src;
-      lightboxImg.alt = currentImg.alt;
-      lightboxCounter.textContent = `${currentIndex + 1} / ${galleryItems.length}`;
+      lightboxImg.src = currentSrc;
+      lightboxCounter.textContent = `${currentIndex + 1} / ${activePhotos.length}`;
       lightboxImg.style.opacity = '1';
       lightboxImg.style.transform = 'scale(1)';
     }, 150);
   };
-
-  galleryItems.forEach((img, index) => {
-    img.closest('.gallery-item').addEventListener('click', () => {
-      updateLightbox(index);
-      lightbox.classList.add('active');
-    });
-  });
 
   const closeLightbox = () => lightbox.classList.remove('active');
 
@@ -631,16 +768,65 @@ Hudba je součástí mého života už řadu let. Ať stojím za mixem, za DJ pu
     if (e.target === lightbox) closeLightbox();
   });
 
-  // Keyboard navigation
+  // Klávesové zkratky
   document.addEventListener('keydown', (e) => {
-    if (!lightbox.classList.contains('active')) return;
-    
-    if (e.key === 'Escape') closeLightbox();
-    if (e.key === 'ArrowLeft') updateLightbox(currentIndex - 1);
-    if (e.key === 'ArrowRight' || e.key === ' ') updateLightbox(currentIndex + 1);
+    if (lightbox.classList.contains('active')) {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') updateLightbox(currentIndex - 1);
+      if (e.key === 'ArrowRight' || e.key === ' ') updateLightbox(currentIndex + 1);
+    } else if (albumModal.classList.contains('active')) {
+      if (e.key === 'Escape') closeAlbumModal();
+    }
   });
 
-  // Touch Swipe support for mobile devices
+  // Generování pozadí soundwave
+  const meter = document.getElementById('meter');
+  const n = Math.max(48, Math.round(window.innerWidth / 20));
+  for(let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    const normalizedPos = Math.abs((i / (n - 1)) - 0.5) * 2;
+    const stereoShape = 0.35 + Math.pow(normalizedPos, 1.4) * 0.65;
+    const base = (0.25 + Math.random() * 0.35) * stereoShape;
+    const peak = Math.min(1, base + (0.3 + Math.random() * 0.4) * stereoShape);
+    
+    s.style.setProperty('--h1', base.toFixed(2));
+    s.style.setProperty('--h2', peak.toFixed(2));
+    s.style.height = '100%';
+    s.style.animationDelay = (Math.random() * 2).toFixed(2) + 's';
+    s.style.animationDuration = (1.4 + Math.random() * 1.4).toFixed(2) + 's';
+    meter.appendChild(s);
+  }
+
+  // Animace Soundwave při skrolovaní
+  window.addEventListener('scroll', () => {
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollPercent = window.scrollY / (maxScroll || 1);
+    const factor = 1 + scrollPercent * 0.6; 
+    document.documentElement.style.setProperty('--scroll-factor', factor);
+  });
+
+  // Intersection Observer pro animace
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { 
+      if(e.isIntersecting){ 
+        e.target.classList.add('in'); 
+      } 
+    });
+  }, { threshold: 0.2 });
+  
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        document.body.setAttribute('data-section', e.target.id);
+      }
+    });
+  }, { threshold: 0.55 });
+
+  document.querySelectorAll('section[id]').forEach(el => sectionObserver.observe(el));
+
+  // Touch Swipe support
   let touchStartX = 0;
   lightbox.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
   lightbox.addEventListener('touchend', (e) => {
