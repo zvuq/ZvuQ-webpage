@@ -92,21 +92,22 @@
   /* SOUNDWAVE BACKGROUND */
   .meter {
     position: fixed; top: 50%; left: 0; right: 0;
+    width: 100%;
     transform: translateY(-50%);
     height: 65vh;
-    display: flex; align-items: center; justify-content: center;
-    gap: clamp(4px,1.2vw,10px); z-index: 0; opacity: .25; pointer-events: none;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 4px; z-index: 0; opacity: .25; pointer-events: none;
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
     transition: opacity .5s ease;
   }
   .meter span {
-    width: clamp(4px,1.2vw,12px); 
+    width: clamp(3px, 1vw, 12px); 
     background: linear-gradient(to bottom, var(--accent-dim), var(--accent), var(--accent-dim));
     border-radius: 3px;
     animation: bounce 2.2s ease-in-out infinite;
     animation-fill-mode: backwards;
     transform-origin: center;
-    flex-shrink: 0;
+    flex-shrink: 1;
   }
   @keyframes bounce {
     0%,100% { transform: scaleY(calc(var(--h1) * var(--scroll-factor, 1))); }
@@ -524,8 +525,8 @@
       title: 'fest Pod zámkem 2024',
       date: 'Horažďovice · 2024',
       cover: 'assets/gallery/fest-pod-zamkem-2024/(1).jpg',
-      // Generuje (1).jpg, (2).jpg až (20).jpg
-      photos: generatePhotos('assets/gallery/fest-pod-zamkem-2024',  20, 'jpg', '(%d)')
+      // Generuje názvy "(1).jpg" až "(20).jpg"
+      photos: generatePhotos('assets/gallery/fest-pod-zamkem-2024', 20, 'jpg', '(%d)')
     }
   ];
 
@@ -634,7 +635,9 @@
 
   function renderSoundwave() {
     meter.innerHTML = '';
-    const n = Math.max(32, Math.round(window.innerWidth / 22));
+    // Hustší zobrazení pro mobily, aby se sloupce lépe rozprostřely po celé šířce
+    const step = window.innerWidth < 640 ? 10 : 20; 
+    const n = Math.max(24, Math.round(window.innerWidth / step));
 
     for (let i = 0; i < n; i++) {
       const s = document.createElement('span');
